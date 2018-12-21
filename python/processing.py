@@ -140,7 +140,7 @@ for w in range(1, 13):
     [pairs, report] = remove_single(pairs, report)
 
     # saving preliminary result for debug purposes
-    write_csv('{name:s}_pairs_window_{w:03d}.csv'.format(name=in_filename.split('.csv')[0], w=w), coln, pairs)
+    write_csv('{name:s}_pairs_window_{w:03d}.csv'.format(name=in_filename.split('.csv')[0], w=w), coln + ['original_index'], pairs)
 
     # getting windowed data
     out = getting_windowed_data(pairs)
