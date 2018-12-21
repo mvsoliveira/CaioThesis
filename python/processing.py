@@ -10,12 +10,12 @@ def parser(filename):
         cold = dict(enumerate(coln))
         cold = {v: k for k, v in cold.items()}
         values = total_list[1:]
-        print(cold, coln)
 
     return [cold, coln, values]
 
 
 def is_valid_pair(i, w, l, col, values):
+    res = False
     if values[i][col['m']] != '':
         # it is a pair
         if i - w >= 0 and i + w < l:
@@ -27,11 +27,24 @@ def is_valid_pair(i, w, l, col, values):
                     if values[i][col['trocou']] == '0':
                         if are_all_the_same(get_values(i, w, w - 1, 'trocou', col, values)):
                             # if it did not change coach, should not change in the entire window
-                            return True
+                            debug_msg = 'Pair candidate without coach change'
+                            res =  True
+                        else:
+                            debug_msg = 'Rejected because coach changed inside the window of a no-coach-change sample'
                     else:
                         # if changed coach, does not matter if changed again
-                        return True
-    return False
+                        debug_msg = 'Pair candidate with coach change'
+                        res = True
+                else:
+                    debug_msg = 'Rejected because team changed inside the window'
+            else:
+                debug_msg = 'Rejected because season changed inside the window'
+        else:
+            debug_msg = 'Rejected because there are no enough data for the desired window size'
+    else:
+        debug_msg = 'Not a pair candidate'
+
+    return [res, debug_msg]
 
 
 def get_values(i, mw, pw, name, col, values):
@@ -49,7 +62,7 @@ def write_csv(filename, coln, buffer):
         writer.writerows(buffer)
 
 
-def remove_single(pairs):
+def remove_single(pairs, report):
     # finding singles
     single = []
     k = 0
@@ -63,9 +76,6 @@ def remove_single(pairs):
             if pairs[k][cold['m']] == pairs[k + 1][cold['m']] and pairs[k][cold['time']] == pairs[k + 1][cold['time']]:
                 # double checking if trocou are different
                 if pairs[k][cold['trocou']] == pairs[k + 1][cold['trocou']]:
-                    print(w, k)
-                    print(pairs[k])
-                    print(pairs[k + 1])
                     raise ValueError('The pair has the same value of trocou, the algorithm has to be improved.')
                 # it is married pair
                 k += 2
@@ -78,8 +88,10 @@ def remove_single(pairs):
     for j in range(len(pairs)):
         if j not in single:
             married_pairs.append(pairs[j])
+        else:
+            report.append(pairs[j][:-1] + ['Late-rejected pair candidate because it is single'])
 
-    return married_pairs
+    return [married_pairs, report]
 
 
 def getting_windowed_data(pairs):
@@ -106,19 +118,24 @@ in_filename = '../data/base.csv'
 [cold, coln, values] = parser('../data/base.csv')
 l = len(values)
 
+
 for w in range(1, 13):
-    # getting valid pairs
+    # getting valid pairs and writing report
     pairs = []
+    report = []
     for i in range(len(values)):
-        if is_valid_pair(i, w, l, cold, values):
+        [is_valid, debug_msg] = is_valid_pair(i, w, l, cold, values)
+        if is_valid:
             pairs.append(values[i] + [i])
+        report.append(values[i]+[debug_msg])
 
     # sorting by m and then by time
     pairs = sorted(pairs, key=lambda x: x[cold['m']])
     pairs = sorted(pairs, key=lambda x: x[cold['time']])
 
     # removing single pairs
-    pairs = remove_single(pairs)
+    report.append(' Late rejection entries')
+    [pairs, report] = remove_single(pairs, report)
 
     # saving preliminary result for debug purposes
     write_csv('{name:s}_pairs_window_{w:03d}.csv'.format(name=in_filename.split('.csv')[0], w=w), coln, pairs)
@@ -128,3 +145,4 @@ for w in range(1, 13):
 
     # writing windowed data
     write_csv('{name:s}_window_{w:03d}.csv'.format(name=in_filename.split('.csv')[0], w=w), coln, out)
+    write_csv('{name:s}_report_window_{w:03d}.csv'.format(name=in_filename.split('.csv')[0], w=w), coln+['debug'], report)
