@@ -11,6 +11,7 @@ def parser(filename):
         cold = dict(enumerate(coln))
         cold = {v: k for k, v in cold.items()}
         values = total_list[1:]
+        print(cold, coln)
 
     return [cold, coln, values]
 
@@ -63,7 +64,9 @@ def remove_single(pairs):
             if pairs[k][cold['m']] == pairs[k+1][cold['m']] and pairs[k][cold['time']] == pairs[k+1][cold['time']]:
                 # double checking if trocou are different
                 if pairs[k][cold['trocou']] == pairs[k + 1][cold['trocou']]:
-                    print(k)
+                    print(w,k)
+                    print(pairs[k])
+                    print(pairs[k+1])
                     raise ValueError('The pair has the same value of trocou, the algorithm has to be improved.')
                 # it is married pair
                 k += 2
@@ -84,12 +87,17 @@ def getting_windowed_data(pairs):
     out = []
     for p in pairs:
         i = p[-1]
-        print(i, list(range(i-w,i+w+1)))
-        print(values[i])
         for k in range(i-w,i+w+1):
             line = copy.deepcopy(values[k])
             # copying m to the entire window
             line[cold['m']] = values[i][cold['m']]
+            # adding periodo
+            if k < i :
+                line[cold['periodo']] = 0
+            elif k > i:
+                line[cold['periodo']] = 1
+            # copying m to the entire window
+            line[cold['tratado']] = values[i][cold['trocou']]
             out.append(line)
     return out
 
