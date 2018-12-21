@@ -42,7 +42,8 @@ def is_valid_pair(i, w, l, col, values):
         else:
             debug_msg = 'Rejected because there are no enough data for the desired window size'
     else:
-        debug_msg = 'Not a pair candidate'
+        #debug_msg = 'Not a pair candidate'
+        debug_msg = ''
 
     return [res, debug_msg]
 
@@ -127,7 +128,8 @@ for w in range(1, 13):
         [is_valid, debug_msg] = is_valid_pair(i, w, l, cold, values)
         if is_valid:
             pairs.append(values[i] + [i])
-        report.append(values[i]+[debug_msg])
+        if debug_msg:
+            report.append(values[i]+[debug_msg])
 
     # sorting by m and then by time
     pairs = sorted(pairs, key=lambda x: x[cold['m']])
